@@ -88,7 +88,7 @@
     <script>
         // Replace with your actual OMDb API key
         const OMDB_API_KEY = 'e072f721';
-
+    
         async function fetchMovieTitle(imdbId) {
             try {
                 const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
@@ -104,7 +104,7 @@
                 return imdbId;
             }
         }
-
+    
         document.getElementById('searchButton').addEventListener('click', async function() {
             const imdbInput = document.getElementById('imdbInput');
             const movieContainer = document.getElementById('movieContainer');
@@ -112,22 +112,44 @@
             const movieFrame = document.getElementById('movieFrame');
             const movieId = document.getElementById('movieId');
             const imdbRegex = /^tt\d{7,8}$/;
-
+    
             // Validate IMDB ID
             if (!imdbRegex.test(imdbInput.value)) {
                 alert('Please enter a valid ID');
                 return;
             }
-
+    
             // Fetch movie title
             const movieTitle = await fetchMovieTitle(imdbInput.value);
-
-            // Update iframe source
+    
+            // Update iframe source with additional attributes to prevent pop-ups
             movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${imdbInput.value}`;
+            movieFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+            movieFrame.setAttribute('allow', 'autoplay; encrypted-media');
+            movieFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    
+            // Add content security policy meta tag
+            const metaCSP = document.createElement('meta');
+            metaCSP.setAttribute('http-equiv', 'Content-Security-Policy');
+            metaCSP.setAttribute('content', "default-src 'self'; script-src 'none'; frame-src 'self' https://vidsrc.me");
+            document.head.appendChild(metaCSP);
+    
+            // Attempt to block pop-ups with event listener
+            movieFrame.onload = function() {
+                try {
+                    const iframeDocument = movieFrame.contentDocument || movieFrame.contentWindow.document;
+                    const scripts = iframeDocument.getElementsByTagName('script');
+                    for (let script of scripts) {
+                        script.remove();
+                    }
+                } catch (error) {
+                    console.warn('Could not modify iframe contents', error);
+                }
+            };
             
             // Update movie ID display
             movieId.textContent = `Now Playing: ${movieTitle}`;
-
+    
             // Toggle visibility
             defaultContent.classList.add('hidden');
             movieContainer.classList.remove('hidden');
