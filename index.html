@@ -35,27 +35,53 @@
                 <h1 class="text-4xl font-bold text-white">MovieSync</h1>
             </div>
             <p class="text-gray-400 max-w-xl mx-auto">
-                Lorem ipsum odor amet, consectetuer adipiscing elit.
+                Search for your favorite movies instantly.
             </p>
         </header>
 
         <div class="max-w-2xl mx-auto bg-[#1e1e1e] rounded-2xl shadow-2xl p-8 card-hover">
-            <div class="flex mb-6">
-                <input 
-                    type="text" 
-                    id="imdbInput"
-                    placeholder="Enter IMDB ID" 
-                    class="input-glow flex-grow px-5 py-3 bg-[#2c2c2c] text-white rounded-l-lg border border-transparent focus:outline-none transition duration-300"
-                >
-                <button 
-                    id="searchButton"
-                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition duration-300 transform hover:scale-105"
-                >
-                    Search
-                </button>
+            <div class="space-y-4">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="titleInput"
+                        placeholder="Enter Movie Title or ID" 
+                        class="input-glow w-full pl-12 pr-5 py-4 bg-[#2c2c2c] text-white rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-500"
+                    >
+                </div>
+                
+                <div class="flex space-x-4">
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="yearInput"
+                            placeholder="Year (optional)" 
+                            class="input-glow w-full pl-12 pr-5 py-4 bg-[#2c2c2c] text-white rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-500"
+                        >
+                    </div>
+                    <button 
+                        id="searchButton"
+                        class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span>Search</span>
+                    </button>
+                </div>
             </div>
 
-            <div id="movieContainer" class="hidden">
+            <div id="movieContainer" class="hidden mt-6">
                 <div class="rounded-2xl overflow-hidden shadow-lg border-4 border-[#3498db]/30">
                     <div class="aspect-video">
                         <iframe 
@@ -74,12 +100,12 @@
                 </div>
             </div>
 
-            <div id="defaultContent" class="text-center bg-[#2c2c2c] rounded-2xl p-12">
+            <div id="defaultContent" class="text-center bg-[#2c2c2c] rounded-2xl p-12 mt-6">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-6 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 4h6v4H7V7zm8 0h2v4h-2V7zm-8 6h10v2H7v-2z" clip-rule="evenodd" />
                 </svg>
-                <p class="text-gray-400">
-                    Lorem ipsum odor amet, consectetuer adipiscing elit.
+                 <p class="text-gray-400">
+                    Search for a movie by title and year.
                 </p>
             </div>
         </div>
@@ -88,24 +114,71 @@
     <script>
         const OMDB_API_KEY = 'e072f721';
     
-        async function fetchMovieTitle(imdbId) {
-            try {
-                const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
-                const data = await response.json();
-                
-                return data.Response === "True" ? data.Title : imdbId;
-            } catch (error) {
-                console.error('Error fetching movie title:', error);
-                return imdbId;
-            }
+        async function fetchMovieData(searchTerm, year) {
+    try {
+        // Check if the search term looks like an IMDB ID (starts with tt)
+        if (searchTerm.startsWith('tt')) {
+            // If it's an IMDB ID, use a direct lookup
+            const response = await fetch(`https://www.omdbapi.com/?i=${encodeURIComponent(searchTerm)}&apikey=${OMDB_API_KEY}`);
+            const data = await response.json();
+            
+            return data.Response === "True" ? data : null;
+        } else {
+            // Regular title search
+            const response = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(searchTerm)}&y=${year}&apikey=${OMDB_API_KEY}`);
+            const data = await response.json();
+            
+            return data.Response === "True" ? data.Search[0] : null;
         }
+    } catch (error) {
+        console.error('Error fetching movie data:', error);
+        return null;
+    }
+}
+
+// Update the click event listener
+searchButton.addEventListener('click', async function() {
+    movieContainer.classList.add('hidden');
+    defaultContent.classList.remove('hidden');
+
+    const searchValue = titleInput.value.trim();
+    const yearValue = yearInput.value.trim();
+
+    if (!searchValue) {
+        alert('Please enter a movie title or IMDB ID.');
+        return;
+    }
+
+    try {
+        const movieData = await fetchMovieData(searchValue, yearValue);
+
+        if (movieData) {
+            // Determine the IMDB ID based on search type
+            const imdbID = movieData.imdbID || searchValue;
+            const title = movieData.Title || movieData.title;
+
+            movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${imdbID}`;
+            movieId.textContent = `Now Playing: ${title}`;
+
+            defaultContent.classList.add('hidden');
+            movieContainer.classList.remove('hidden');
+
+            setupMobileAdBlocker(movieFrame);
+        } else {
+            alert('No movie found. Please try again.');
+        }
+
+    } catch (error) {
+        console.error('Error loading movie:', error);
+        alert('Failed to load movie. Please try again.');
+    }
+});
     
         function setupMobileAdBlocker(iframe) {
             iframe.onload = () => {
                 try {
                     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                     
-                    // Inject mobile-specific anti-ad styles
                     const styleEl = iframeDoc.createElement('style');
                     styleEl.innerHTML = `
                         body {
@@ -130,7 +203,6 @@
                     `;
                     iframeDoc.head.appendChild(styleEl);
     
-                    // Remove potential ad scripts
                     const scripts = iframeDoc.getElementsByTagName('script');
                     for (let script of scripts) {
                         if (script.innerHTML.includes('popup') || 
@@ -149,46 +221,39 @@
     
         document.addEventListener('DOMContentLoaded', () => {
             const searchButton = document.getElementById('searchButton');
-            const imdbInput = document.getElementById('imdbInput');
+            const titleInput = document.getElementById('titleInput');
+            const yearInput = document.getElementById('yearInput');
             const movieContainer = document.getElementById('movieContainer');
             const defaultContent = document.getElementById('defaultContent');
             const movieFrame = document.getElementById('movieFrame');
             const movieId = document.getElementById('movieId');
-            const imdbRegex = /^tt\d{7,8}$/;
     
             searchButton.addEventListener('click', async function() {
-                // Reset any previous state
                 movieContainer.classList.add('hidden');
                 defaultContent.classList.remove('hidden');
     
-                // Validate IMDB ID
-                const inputValue = imdbInput.value.trim();
-                if (!imdbRegex.test(inputValue)) {
-                    alert('Please enter a valid IMDB ID (e.g., tt1234567)');
+                const titleValue = titleInput.value.trim();
+                const yearValue = yearInput.value.trim();
+    
+                if (!titleValue) {
+                    alert('Please enter a movie title.');
                     return;
                 }
     
                 try {
-                    // Fetch movie title
-                    const movieTitle = await fetchMovieTitle(inputValue);
+                    const movieData = await fetchMovieData(titleValue, yearValue);
     
-                    // Update iframe source
-                    movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${inputValue}`;
-                    
-                    // Mobile-specific iframe attributes
-                    movieFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
-                    movieFrame.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
-                    movieFrame.setAttribute('referrerpolicy', 'no-referrer');
-                    
-                    // Setup mobile ad-blocker
-                    setupMobileAdBlocker(movieFrame);
+                    if (movieData) {
+                        movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${movieData.imdbID}`;
+                        movieId.textContent = `Now Playing: ${movieData.Title}`;
     
-                    // Update movie ID display
-                    movieId.textContent = `Now Playing: ${movieTitle}`;
+                        defaultContent.classList.add('hidden');
+                        movieContainer.classList.remove('hidden');
     
-                    // Toggle visibility
-                    defaultContent.classList.add('hidden');
-                    movieContainer.classList.remove('hidden');
+                        setupMobileAdBlocker(movieFrame);
+                    } else {
+                        alert('No movie found. Please try again.');
+                    }
     
                 } catch (error) {
                     console.error('Error loading movie:', error);
@@ -196,8 +261,12 @@
                 }
             });
     
-            // Optional: Allow search on Enter key press
-            imdbInput.addEventListener('keypress', (e) => {
+            titleInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchButton.click();
+                }
+            });
+            yearInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     searchButton.click();
                 }
