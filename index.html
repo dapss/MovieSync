@@ -44,7 +44,7 @@
                 <input 
                     type="text" 
                     id="imdbInput"
-                    placeholder="" 
+                    placeholder="Enter IMDB ID" 
                     class="input-glow flex-grow px-5 py-3 bg-[#2c2c2c] text-white rounded-l-lg border border-transparent focus:outline-none transition duration-300"
                 >
                 <button 
@@ -86,7 +86,26 @@
     </div>
 
     <script>
-        document.getElementById('searchButton').addEventListener('click', function() {
+        // Replace with your actual OMDb API key
+        const OMDB_API_KEY = 'e072f721';
+
+        async function fetchMovieTitle(imdbId) {
+            try {
+                const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
+                const data = await response.json();
+                
+                if (data.Response === "True") {
+                    return data.Title;
+                } else {
+                    return imdbId;
+                }
+            } catch (error) {
+                console.error('Error fetching movie title:', error);
+                return imdbId;
+            }
+        }
+
+        document.getElementById('searchButton').addEventListener('click', async function() {
             const imdbInput = document.getElementById('imdbInput');
             const movieContainer = document.getElementById('movieContainer');
             const defaultContent = document.getElementById('defaultContent');
@@ -96,15 +115,18 @@
 
             // Validate IMDB ID
             if (!imdbRegex.test(imdbInput.value)) {
-                alert('Please enter a valid IMDB ID (e.g., tt5761544)');
+                alert('Please enter a valid ID');
                 return;
             }
+
+            // Fetch movie title
+            const movieTitle = await fetchMovieTitle(imdbInput.value);
 
             // Update iframe source
             movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${imdbInput.value}`;
             
             // Update movie ID display
-            movieId.textContent = `Now Playing: ${imdbInput.value}`;
+            movieId.textContent = `Now Playing: ${movieTitle}`;
 
             // Toggle visibility
             defaultContent.classList.add('hidden');
