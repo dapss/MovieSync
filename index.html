@@ -2,15 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MovieSync - Stream Instantly</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #121212;
             color: #ffffff;
+            overscroll-behavior-y: contain;
+            touch-action: manipulation;
         }
         .input-glow:focus {
             box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
@@ -22,6 +26,12 @@
         .card-hover:hover {
             transform: translateY(-10px);
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        /* Disable zoom on input focus for mobile */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -45,6 +55,8 @@
                     type="text" 
                     id="imdbInput"
                     placeholder="Enter IMDB ID" 
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     class="input-glow flex-grow px-5 py-3 bg-[#2c2c2c] text-white rounded-l-lg border border-transparent focus:outline-none transition duration-300"
                 >
                 <button 
@@ -86,6 +98,50 @@
     </div>
 
     <script>
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Optional: Show install button
+            const installButton = document.createElement('button');
+            installButton.textContent = 'Install App';
+            installButton.classList.add('fixed', 'bottom-4', 'right-4', 'bg-blue-600', 'text-white', 'px-4', 'py-2', 'rounded');
+            document.body.appendChild(installButton);
+
+            installButton.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                }
+            });
+        });
+
+        // Prevent pull-to-refresh
+        document.body.addEventListener('touchstart', function(e) {
+            startY = e.touches[0].pageY;
+        });
+
+        document.body.addEventListener('touchmove', function(e) {
+            let touch = e.touches[0];
+            if (touch.pageY > startY && window.scrollY === 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Fullscreen support for mobile
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
         // Replace with your actual OMDb API key
         const OMDB_API_KEY = 'e072f721';
 
@@ -101,7 +157,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching movie title:', error);
-                return imdbId;
+                return imdb Id;
             }
         }
 
