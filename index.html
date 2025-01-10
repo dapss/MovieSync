@@ -86,19 +86,94 @@
     </div>
 
     <script>
-        // Replace with your actual OMDb API key
         const OMDB_API_KEY = 'e072f721';
+    
+        // Enhanced ad-blocking function
+        function setupAdBlocker(iframe) {
+            const styles = `
+                <style>
+                    body { 
+                        overflow: hidden !important; 
+                    }
+                    *[id*='advert'], 
+                    *[class*='ad'], 
+                    *[class*='popup'], 
+                    *[id*='popup'] {
+                        display: none !important;
+                        visibility: hidden !important;
+                        opacity: 0 !important;
+                        position: absolute !important;
+                        top: -9999px !important;
+                    }
+                </style>
+            `;
+    
+            iframe.onload = () => {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // Inject anti-ad styles
+                    const styleEl = iframeDoc.createElement('style');
+                    styleEl.innerHTML = `
+                        body { 
+                            overflow: hidden !important; 
+                        }
+                        *[id*='advert'], 
+                        *[class*='ad'], 
+                        *[class*='popup'], 
+                        *[id*='popup'] {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                            position: absolute !important;
+                            top: -9999px !important;
+                        }
+                    `;
+                    iframeDoc.head.appendChild(styleEl);
+    
+                    // Remove potential popup scripts
+                    const scripts = iframeDoc.getElementsByTagName('script');
+                    for (let script of scripts) {
+                        if (script.innerHTML.includes('popup') || 
+                            script.innerHTML.includes('advert') || 
+                            script.src.includes('ad')) {
+                            script.remove();
+                        }
+                    }
+    
+                    // Block pop-up creating elements
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            mutation.addedNodes.forEach((node) => {
+                                if (node.nodeType === Node.ELEMENT_NODE) {
+                                    const element = node;
+                                    if (element.id.includes('advert') || 
+                                        element.className.includes('ad') || 
+                                        element.className.includes('popup')) {
+                                        element.remove();
+                                    }
+                                }
+                            });
+                        });
+                    });
+    
+                    observer.observe(iframeDoc.body, {
+                        childList: true,
+                        subtree: true
+                    });
+    
+                } catch (error) {
+                    console.warn('Ad-blocking failed:', error);
+                }
+            };
+        }
     
         async function fetchMovieTitle(imdbId) {
             try {
                 const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
                 const data = await response.json();
                 
-                if (data.Response === "True") {
-                    return data.Title;
-                } else {
-                    return imdbId;
-                }
+                return data.Response === "True" ? data.Title : imdbId;
             } catch (error) {
                 console.error('Error fetching movie title:', error);
                 return imdbId;
@@ -122,31 +197,17 @@
             // Fetch movie title
             const movieTitle = await fetchMovieTitle(imdbInput.value);
     
-            // Update iframe source with additional attributes to prevent pop-ups
+            // Update iframe source with ad-blocking attributes
             movieFrame.src = `https://vidsrc.me/embed/movie?imdb=${imdbInput.value}`;
-            movieFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            movieFrame.setAttribute('allow', 'autoplay; encrypted-media');
-            movieFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    
-            // Add content security policy meta tag
-            const metaCSP = document.createElement('meta');
-            metaCSP.setAttribute('http-equiv', 'Content-Security-Policy');
-            metaCSP.setAttribute('content', "default-src 'self'; script-src 'none'; frame-src 'self' https://vidsrc.me");
-            document.head.appendChild(metaCSP);
-    
-            // Attempt to block pop-ups with event listener
-            movieFrame.onload = function() {
-                try {
-                    const iframeDocument = movieFrame.contentDocument || movieFrame.contentWindow.document;
-                    const scripts = iframeDocument.getElementsByTagName('script');
-                    for (let script of scripts) {
-                        script.remove();
-                    }
-                } catch (error) {
-                    console.warn('Could not modify iframe contents', error);
-                }
-            };
             
+            // Enhanced iframe attributes
+            movieFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+            movieFrame.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
+            movieFrame.setAttribute('referrerpolicy', 'no-referrer');
+            
+            // Setup ad-blocker
+            setupAdBlocker(movieFrame);
+    
             // Update movie ID display
             movieId.textContent = `Now Playing: ${movieTitle}`;
     
